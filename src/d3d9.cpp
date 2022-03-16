@@ -220,14 +220,19 @@ bool WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved) {
         GetModuleFileNameA(hm, path, sizeof(path));
         *strrchr(path, '\\') = '\0';
         strcat_s(path, "\\d3d9.ini");
+
         /* read settings from ini */
         bForceWindowedMode = GetPrivateProfileInt("DX", "ForceWindowedMode", 0, path) != 0;
         bZoomPatch = GetPrivateProfileIntA("ZoomPatch", "ZoomPatch", 0, path) != 0;
 
         threadData* tData = new threadData;
-        tData->bDebugMode = GetPrivateProfileIntA("ZoomPatch", "ZoomPatchDebugMode", 0, path) != 0;
+        tData->bDebugMode = GetPrivateProfileIntA("ZoomPatch", "DebugMode", 0, path) != 0;
         tData->bWideView = GetPrivateProfileIntA("ZoomPatch", "WideViewMode", 0, path) != 0;
         tData->ZoomIncrement = static_cast<float>(GetPrivateProfileIntA("ZoomPatch", "ZoomPatchStep", 10, path)) / 10.0f;
+        tData->bBannerPatch = GetPrivateProfileIntA("Misc", "BannerPatch", 0, path) != 0;
+        GetPrivateProfileStringA("Misc", "BannerURL1", NULL, tData->BannerURL_1, URLMAX, path);
+        GetPrivateProfileStringA("Misc", "BannerURL2", NULL, tData->BannerURL_2, URLMAX, path);
+        GetPrivateProfileStringA("Misc", "BannerURL3", NULL, tData->BannerURL_3, URLMAX, path);
 
         if (bZoomPatch)
             CreateThread(0, 0, ZoomPatchThread, tData, 0, 0);
@@ -236,9 +241,9 @@ bool WINAPI DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved) {
         if (fFPSLimit)
             bFPSLimit = true;
 
-        GetSystemDirectory(path, MAX_PATH);
+        GetSystemDirectoryA(path, MAX_PATH);
         strcat_s(path, "\\d3d9.dll");
-        d3d9.dll = LoadLibrary(path);
+        d3d9.dll = LoadLibraryA(path);
         d3d9.D3DPERF_BeginEvent = (LPD3DPERF_BEGINEVENT)GetProcAddress(d3d9.dll, "D3DPERF_BeginEvent");
         d3d9.D3DPERF_EndEvent = (LPD3DPERF_ENDEVENT)GetProcAddress(d3d9.dll, "D3DPERF_EndEvent");
         d3d9.D3DPERF_GetStatus = (LPD3DPERF_GETSTATUS)GetProcAddress(d3d9.dll, "D3DPERF_GetStatus");

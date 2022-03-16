@@ -63,6 +63,11 @@ memoryPTR WorldObjectPTR_adk = {
     { 0x50 }
 };
 
+/* AdK Banner */
+DWORD ADKBannerURL1 = 0x104513;
+DWORD ADKBannerURL2 = 0x104592;
+DWORD ADKBannerURL3 = 0x104602;
+
 DWORD BaseGameVersionAddr = 0x2C5A30;
 DWORD AddonGameVersionAddr = 0x2D2DB8;
 DWORD ADKGameVersionAddr = 0x495800;
@@ -265,6 +270,26 @@ bool calcNewZoomValue(int& hor, int& vert, float& zoom_value, bool wideview) {
     }
 }
 
+void AdKBannerPatch(threadData* tData) {
+    char** sURL1 = (char**)((DWORD)getBaseAddress() + ADKBannerURL1);
+    char** sURL2 = (char**)((DWORD)getBaseAddress() + ADKBannerURL2);
+    char** sURL3 = (char**)((DWORD)getBaseAddress() + ADKBannerURL3);
+
+    char* sURL1_new = tData->BannerURL_1;
+    char* sURL2_new = tData->BannerURL_2;
+    char* sURL3_new = tData->BannerURL_3;
+
+    showMessage("Patching Banner URLs...");
+
+    writeBytes(sURL1, &sURL1_new, 4);
+    writeBytes(sURL2, &sURL2_new, 4);
+    writeBytes(sURL3, &sURL3_new, 4);
+
+    showMessage(*sURL1);
+    showMessage(*sURL2);
+    showMessage(*sURL3);
+}
+
 int MainLoop(memoryPTR& WorldObjectPTR,
     memoryPTR& MaxZoomPTR,
     memoryPTR& CurrZoomPTR,
@@ -362,7 +387,7 @@ int MainEntry(threadData* tData) {
         startupMessage();
     }
     /* wait a bit for the application to start up (might crash otherwise) */
-    Sleep(4000);
+    Sleep(2000);
 
     /* check if gameVersion is supported */
     char* sBase = (char*)((DWORD)getBaseAddress() + BaseGameVersionAddr);
@@ -370,7 +395,7 @@ int MainEntry(threadData* tData) {
     char* sADK = (char*)((DWORD)getBaseAddress() + ADKGameVersionAddr);
     bool bSupported = false;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 8; i++) {
         if (checkSettlersII(sBase) || checkSettlersII(sAddon) || checkSettlersII(sADK)) {
             if (checkSettlersVersion(sBase)) {
                 showMessage("Found Base version.");
@@ -385,6 +410,10 @@ int MainEntry(threadData* tData) {
             else if (checkSettlersVersion(sADK)) {
                 showMessage("Found ADK version.");
                 bSupported = true;
+
+                if (tData->bBannerPatch)
+                    AdKBannerPatch(tData);
+
                 return MainLoop(WorldObjectPTR_adk, MaxZoomPTR_adk, CurrZoomPTR_adk, tData);
             }
         }
